@@ -23,7 +23,12 @@ class GoogleFormsParser {
       if (this.isHeaderOnly(container)) return;
 
       const questionText = this.extractQuestionText(container);
-      if (!questionText || seenQuestions.has(questionText)) return;
+      const images = this.extractImages(container);
+
+      // Якщо немає тексту питання, але є зображення, використовуємо зображення як питання
+      const questionIdentifier = questionText || (images.length > 0 ? `image_${images[0].src}` : '');
+
+      if (!questionIdentifier || seenQuestions.has(questionIdentifier)) return;
 
       const headerTexts = [
         'Choose the correct word or form to complete the sentence',
@@ -33,15 +38,16 @@ class GoogleFormsParser {
       if (headerTexts.some(text => questionText.includes(text))) return;
 
       const questionData = {
-        question: questionText,
+        question: questionText || (images.length > 0 ? `[Зображення ${images.length}]` : ''),
         type: this.detectQuestionType(container),
         options: this.extractOptions(container),
         required: this.isRequired(container),
-        answer: null
+        answer: null,
+        images: images
       };
 
       questions.push(questionData);
-      seenQuestions.add(questionText);
+      seenQuestions.add(questionIdentifier);
     });
 
     return questions;
@@ -100,6 +106,24 @@ class GoogleFormsParser {
     }
 
     return '';
+  }
+
+  extractImages(container) {
+    const images = [];
+    const imgElements = container.querySelectorAll('img');
+
+    imgElements.forEach((img, index) => {
+      if (img.src && !img.src.includes('data:image/svg+xml')) {
+        images.push({
+          src: img.src,
+          alt: img.alt || `Image ${index + 1}`,
+          title: img.title || '',
+          index: index + 1
+        });
+      }
+    });
+
+    return images;
   }
 
   detectQuestionType(container) {

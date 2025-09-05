@@ -109,6 +109,15 @@ class FormsScanner {
     const questionsText = this.questions.map((q, index) => {
       let result = t('questionPrefix', { number: index + 1, question: q.question });
 
+      if (q.images && q.images.length > 0) {
+        q.images.forEach((img, imgIndex) => {
+          result += `🖼️ Image ${imgIndex + 1}: ${img.src}\n`;
+          if (img.alt) {
+            result += `   Description: ${img.alt}\n`;
+          }
+        });
+      }
+
       if (q.type === 'radio' || q.type === 'checkbox' || q.type === 'select') {
         result += t('optionsPrefix', { options: q.options.join('(next variant) ') });
       } else if (q.type === 'text') {
